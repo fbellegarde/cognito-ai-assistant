@@ -2,11 +2,20 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
+from pathlib import Path
 
 
 def main():
     """Run administrative tasks."""
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'cognito_assistant.settings')
+    
+    # --- CRITICAL FIX START ---
+    # Explicitly add the base directory to the system path (where 'cognito_ai_assistant' lives) to ensure 
+    # the main project module can be found during Docker build steps (like collectstatic).
+    BASE_DIR = Path(__file__).resolve().parent
+    sys.path.insert(0, str(BASE_DIR))
+    # --- CRITICAL FIX END ---
+
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'cognito_ai_assistant.settings')
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

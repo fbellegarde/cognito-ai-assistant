@@ -2,10 +2,10 @@
 FROM python:3.12-slim
 
 # Set environment variables
-ENV PYTHONUNBUFFERED 1
-ENV DJANGO_SETTINGS_MODULE cognito_ai_assistant.settings
-# CRITICAL FIX: Add the application directory to the Python path
-ENV PYTHONPATH /app
+ENV PYTHONUNBUFFERED=1
+ENV DJANGO_SETTINGS_MODULE=cognito_ai_assistant.settings
+# CRITICAL: Ensure the application directory is in the Python path
+ENV PYTHONPATH=/app
 
 # Set working directory for the application
 WORKDIR /app
@@ -23,16 +23,15 @@ COPY requirements.txt /tmp/
 RUN pip install --no-cache-dir -r /tmp/requirements.txt \
     && rm /tmp/requirements.txt
 
-# 3. Copy the rest of the application code (including your cognito_ai_assistant/ folder)
+# 3. Copy the rest of the application code
 COPY . /app
 
 # 4. Collect static files
-# This step now uses the PYTHONPATH to correctly locate the settings module.
+# This step requires the fix in manage.py to correctly locate settings.
 RUN python manage.py collectstatic --noinput
 
 # 5. The application runs on port 8000
 EXPOSE 8000
 
 # 6. Define the entrypoint script
-# The script will handle database migrations and starting Gunicorn.
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
