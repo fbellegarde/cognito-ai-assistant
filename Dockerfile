@@ -4,6 +4,8 @@ FROM python:3.12-slim
 # Set environment variables
 ENV PYTHONUNBUFFERED 1
 ENV DJANGO_SETTINGS_MODULE cognito_ai_assistant.settings
+# CRITICAL FIX: Add the application directory to the Python path
+ENV PYTHONPATH /app
 
 # Set working directory for the application
 WORKDIR /app
@@ -17,16 +19,15 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # 2. Copy and install Python dependencies FIRST (for Docker layer caching)
-# Note: You MUST ensure 'langchain-openai' is in this file!
 COPY requirements.txt /tmp/
 RUN pip install --no-cache-dir -r /tmp/requirements.txt \
     && rm /tmp/requirements.txt
 
-# 3. Copy the rest of the application code
+# 3. Copy the rest of the application code (including your cognito_ai_assistant/ folder)
 COPY . /app
 
 # 4. Collect static files
-# This step requires all Python modules to be correctly installed.
+# This step now uses the PYTHONPATH to correctly locate the settings module.
 RUN python manage.py collectstatic --noinput
 
 # 5. The application runs on port 8000
