@@ -1,5 +1,4 @@
-# D:\cognito_ai_assistant\.github\workflows\main.yml
-name: Build & Push to AWS ECR
+name: Build & Deploy Cognito AI Assistant to AWS ECS
 
 on:
   push:
@@ -8,16 +7,19 @@ on:
   pull_request:
     branches:
       - main # Run tests on PR
+  workflow_dispatch: # Allows manual triggering from GitHub UI
 
 env:
+  # CORRECTED VARIABLES to match your main.tf infrastructure names (app_name=cognito-ai)
   AWS_REGION: ${{ secrets.AWS_REGION }}
-  ECR_REPOSITORY: cognito-ai-app # Must match the name in CloudFormation/Terraform
-  ECS_SERVICE: cognito-ai-service # Defined in Phase 4/6
-  ECS_CLUSTER: cognito-ai-cluster # Defined in Phase 4/6
-  ECS_TASK_DEFINITION: task-definition.json # Blueprint file
+  ECR_REPOSITORY: cognito-ai # Corrected: Matches the repository name (app_name default)
+  ECS_SERVICE: cognito-ai-service 
+  ECS_CLUSTER: cognito-ai-cluster
+  ECS_TASK_DEFINITION_FAMILY: cognito-ai-task # Corrected: Matches the task family in main.tf
+  CONTAINER_NAME: cognito-ai-app # Matches the name field in your task definition's container_definitions
 
 jobs:
-  build-and-push:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -40,16 +42,35 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }} # Use the Git commit hash as the unique tag
         run: |
-          # Build the image using the Dockerfile in the root
+          # Build images (tagged with 'latest' and the specific commit SHA)
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          
+          # Push both tags to ECR
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          # Set output variable containing the full image URI for the next step
           echo "image_uri=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-      # This step deploys the new image to ECS (Phase 6 implementation)
-      # - name: Deploy to ECS
-      #   uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-      #   with:
-      #     task-definition: ${{ env.ECS_TASK_DEFINITION }}
-      #     service: ${{ env.ECS_SERVICE }}
-      #     cluster: ${{ env.ECS_CLUSTER }}
-      #     wait-for-service-stability: true
+      # --- DEPLOYMENT STEP 1: Render the Task Definition (REQUIRED) ---
+      # Updates the image URI inside the ECS Task Definition blueprint
+      - name: Render the ECS task definition
+        id: render-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          # This points to the family name defined in Terraform
+          task-definition: ${{ env.ECS_TASK_DEFINITION_FAMILY }}
+          # This specifies which container in the definition to update
+          container-name: ${{ env.CONTAINER_NAME }}
+          # This passes the ECR image URI from the build step
+          image: ${{ steps.build-image.outputs.image_uri }}
+
+      # --- DEPLOYMENT STEP 2: Deploy to ECS Service ---
+      # Deploys the newly rendered task definition to your ECS service
+      - name: Deploy to ECS Service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.render-task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true # Wait until the new task is stable and running

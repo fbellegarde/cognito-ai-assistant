@@ -1,0 +1,89 @@
+# D:\cognito_ai_assistant\IaC\cloudformation\cognito-cfn.yaml
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Cognito AI Assistant - ECR Repository and ECS IAM Roles
+
+Resources:
+  # 1. ECR Repository for Docker Images
+  CognitoECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: cognito-ai-app
+      RepositoryPolicyText:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowPull
+            Effect: Allow
+            Principal:
+              AWS:
+                # Allows pull access for the root account
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - ecr:GetDownloadUrlForLayer
+              - ecr:BatchGetImage
+              - ecr:BatchCheckLayerAvailability
+          - Sid: AllowPush
+            Effect: Allow
+            Principal:
+              AWS:
+                # FIX: Replacing the non-existent 'cognito-deployer' user with the Root Account ARN
+                # This grants push permissions to the root account.
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - ecr:CompleteLayerUpload
+              - ecr:UploadLayerPart
+              - ecr:InitiateLayerUpload
+              - ecr:PutImage
+              - ecr:SetRepositoryPolicy # Added SetRepositoryPolicy for completeness
+              - ecr:DeleteRepositoryPolicy # Added DeleteRepositoryPolicy for completeness
+
+  # 2. ECS Task Execution IAM Role (Fargate needs this to pull image and publish logs)
+  ECSTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+  # 3. ECS Task IAM Role (The actual application process uses this for AWS SDK calls)
+  ECSTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      # Policy to allow access to Secrets Manager (Phase 6)
+      Policies:
+        - PolicyName: CognitoAppPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameters
+                  - secretsmanager:GetSecretValue
+                Resource: "*" # Limit this in production!
+
+Outputs:
+  ECRRepositoryUri:
+    Description: ECR Repository URI
+    Value: !GetAtt CognitoECRRepository.RepositoryUri
+    Export:
+      Name: CognitoAI::ECRUri
+  ExecutionRoleArn:
+    Description: ECS Task Execution Role ARN
+    Value: !GetAtt ECSTaskExecutionRole.Arn
+    Export:
+      Name: CognitoAI::ExecutionRoleArn
+  TaskRoleArn:
+    Description: ECS Task Role ARN
+    Value: !GetAtt ECSTaskRole.Arn
+    Export:
+      Name: CognitoAI::TaskRoleArn

@@ -1,0 +1,13 @@
+# Terraform generated files
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# Local environments/dependencies
+.venv/
+__pycache__/
+*.pyc
+
+# Docker build context
+# If you have specific files you don't want to copy or include

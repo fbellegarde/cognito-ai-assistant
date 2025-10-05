@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cognito Omega Web Client</title>
+    <style>body { font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; }</style>
+</head>
+<body>
+    <h1>Cognito $\omega$ AI Client</h1>
+    <input type="text" id="userInput" placeholder="Ask your question (e.g., image: latest stock data)" style="width: 100%; padding: 10px; margin-bottom: 10px;">
+    <button onclick="sendQuery()">Submit Query</button>
+    <pre id="output" style="background-color: #f4f4f4; padding: 10px; white-space: pre-wrap;"></pre>
+
+    <script>
+        // *** REPLACE WITH YOUR ACTUAL AWS ALB ENDPOINT ***
+        const API_ENDPOINT = "http://cognito-omega-1234.us-east-1.elb.amazonaws.com/query"; 
+
+        async function sendQuery() {
+            const inputElement = document.getElementById('userInput');
+            const outputElement = document.getElementById('output');
+            const rawUserInput = inputElement.value;
+
+            outputElement.textContent = "Processing... The sophisticated graph is running (15 steps!)...";
+
+            try {
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ raw_user_input: rawUserInput })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP Error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                outputElement.textContent = 
+                    `[RESPONSE STATUS: ${data.status.toUpperCase()}]\n` +
+                    `[EXPERT: ${data.expert_used.toUpperCase()}]\n` +
+                    `[RISK SCORE: ${data.risk_score}]\n` +
+                    `---\n` +
+                    `${data.final_answer}\n\n` +
+                    `Verification Hash: ${data.audit_hash.substring(0, 15)}...`;
+
+            } catch (error) {
+                outputElement.textContent = `Error: Could not connect to the Cognito Omega Service. Details: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

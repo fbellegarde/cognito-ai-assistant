@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+    <h1>{{ page_title }}</h1>
+    <p style="font-size: 1.1em; color: #172a3a; margin-bottom: 40px;">{{ welcome_message }}</p>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+
+        <div style="background-color: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-left: 5px solid #007bff;">
+            <h2>Cognito AI 💬</h2>
+            <p>Start a deep conversation, brainstorm, or generate content.</p>
+            <a href="{% url 'ai_chat' %}"><button style="padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.3s;">
+                Launch Chat
+            </button></a>
+        </div>
+
+        <div style="background-color: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-left: 5px solid #ffc107;">
+            <h2>Project Insights 💡</h2>
+            <p>View content-based task and study recommendations.</p>
+            <a href="{% url 'recommender' %}"><button style="padding: 10px 15px; background-color: #ffc107; color: #333; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.3s;">
+                View Recs
+            </button></a>
+        </div>
+    </div>
+
+    <h2 style="margin-top: 50px;">Coming Soon: Advanced Features</h2>
+    <p>Task Scheduling (AWS Lambda/RDS) and Security Management (AWS Secrets Manager) integration.</p>
+
+{% endblock content %}

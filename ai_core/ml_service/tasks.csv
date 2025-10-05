@@ -1,0 +1,7 @@
+task_id,title,description,category
+1,Learn AWS IAM,Study users, roles, and least privilege in AWS.,Cloud/Security
+2,Develop Django Auth,Finish user login and logout implementation in Django.,Software Development
+3,Research Hugging Face Models,Find a small, free generative AI model for text summarization.,Generative AI/ML
+4,Setup Dockerfile for App,Write the Dockerfile for the Django application.,DevOps/Cloud
+5,Study ECS Fargate,Understand how ECS and Fargate manage container deployment.,Cloud
+6,Setup ETL Pipeline,Plan the data flow from S3 to RDS using AWS Lambda.,Data Pipeline/Cloud
