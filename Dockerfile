@@ -27,7 +27,7 @@ RUN pip install --no-cache-dir -r /tmp/requirements.txt \
 COPY . /app
 
 # 4. Collect static files
-# This step requires the fix in manage.py to correctly locate settings.
+# This step relies on the fix in manage.py to correctly locate settings.
 RUN python manage.py collectstatic --noinput
 
 # 5. The application runs on port 8000

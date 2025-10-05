@@ -9,8 +9,9 @@ def main():
     """Run administrative tasks."""
     
     # --- CRITICAL FIX START ---
-    # Explicitly add the base directory to the system path (where 'cognito_ai_assistant' lives) to ensure 
-    # the main project module can be found during Docker build steps (like collectstatic).
+    # Explicitly add the base directory to the system path to ensure 
+    # the main project module ('cognito_ai_assistant') can be found 
+    # by Django during Docker build steps (like collectstatic).
     BASE_DIR = Path(__file__).resolve().parent
     sys.path.insert(0, str(BASE_DIR))
     # --- CRITICAL FIX END ---
